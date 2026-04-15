@@ -63,7 +63,9 @@ func (h *ProjectHandler) GetProjects(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	projects, err := h.service.GetProjects(r.Context(), userID)
+	limit, offset := utils.GetPagination(r)
+
+	projects, err := h.service.GetProjects(r.Context(), userID, limit, offset)
 	if err != nil {
 		utils.Error(w, http.StatusInternalServerError, "failed to fetch projects")
 		return
@@ -71,6 +73,8 @@ func (h *ProjectHandler) GetProjects(w http.ResponseWriter, r *http.Request) {
 
 	utils.JSON(w, http.StatusOK, map[string]interface{}{
 		"projects": projects,
+		"limit":    limit,
+		"offset":   offset,
 	})
 }
 

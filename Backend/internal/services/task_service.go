@@ -73,6 +73,8 @@ func (s *TaskService) GetTasks(
 	projectID uuid.UUID,
 	status *models.TaskStatus,
 	assigneeID *uuid.UUID,
+	limit int,
+	offset int,
 ) ([]models.Task, error) {
 
 	project, err := s.projectRepo.GetProjectByID(ctx, projectID)
@@ -83,7 +85,7 @@ func (s *TaskService) GetTasks(
 		return nil, errors.New("project not found")
 	}
 
-	return s.taskRepo.GetTasksByProject(ctx, projectID, status, assigneeID)
+	return s.taskRepo.GetTasksByProject(ctx, projectID, status, assigneeID, limit, offset)
 }
 
 func (s *TaskService) GetTaskByID(

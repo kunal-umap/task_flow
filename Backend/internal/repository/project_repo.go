@@ -34,15 +34,23 @@ func (r *ProjectRepository) CreateProject(ctx context.Context, project *models.P
 	return err
 }
 
-func (r *ProjectRepository) GetProjectsByUser(ctx context.Context, userID uuid.UUID) ([]models.Project, error) {
+func (r *ProjectRepository) GetProjectsByUser(
+	ctx context.Context,
+	userID uuid.UUID,
+	limit int,
+	offset int,
+) ([]models.Project, error) {
+
 	query := `
 		SELECT DISTINCT p.id, p.name, p.description, p.owner_id, p.created_at
 		FROM projects p
 		LEFT JOIN tasks t ON t.project_id = p.id
 		WHERE p.owner_id = $1 OR t.assignee_id = $1
+		ORDER BY p.created_at DESC
+		LIMIT $2 OFFSET $3
 	`
 
-	rows, err := r.db.Query(ctx, query, userID)
+	rows, err := r.db.Query(ctx, query, userID, limit, offset)
 	if err != nil {
 		return nil, err
 	}

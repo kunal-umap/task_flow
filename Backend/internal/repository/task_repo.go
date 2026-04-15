@@ -3,7 +3,7 @@ package repository
 import (
 	"context"
 	"errors"
-	"fmt"
+	"strconv"
 	"taskflow/internal/models"
 
 	"github.com/google/uuid"
@@ -47,9 +47,11 @@ func (r *TaskRepository) GetTasksByProject(
 	projectID uuid.UUID,
 	status *models.TaskStatus,
 	assigneeID *uuid.UUID,
+	limit int,
+	offset int,
 ) ([]models.Task, error) {
 
-	baseQuery := `
+	query := `
 		SELECT id, title, description, status, priority, project_id, assignee_id, due_date, created_at, updated_at
 		FROM tasks
 		WHERE project_id = $1
@@ -58,20 +60,28 @@ func (r *TaskRepository) GetTasksByProject(
 	args := []interface{}{projectID}
 	argIndex := 2
 
-	// dynamic filters
 	if status != nil {
-		baseQuery += fmt.Sprintf(" AND status = $%d", argIndex)
+		query += " AND status = $" + strconv.Itoa(argIndex)
 		args = append(args, *status)
 		argIndex++
 	}
 
 	if assigneeID != nil {
-		baseQuery += fmt.Sprintf(" AND assignee_id = $%d", argIndex)
+		query += " AND assignee_id = $" + strconv.Itoa(argIndex)
 		args = append(args, *assigneeID)
 		argIndex++
 	}
 
-	rows, err := r.db.Query(ctx, baseQuery, args...)
+	query += " ORDER BY created_at DESC"
+
+	query += " LIMIT $" + strconv.Itoa(argIndex)
+	args = append(args, limit)
+	argIndex++
+
+	query += " OFFSET $" + strconv.Itoa(argIndex)
+	args = append(args, offset)
+
+	rows, err := r.db.Query(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +91,6 @@ func (r *TaskRepository) GetTasksByProject(
 
 	for rows.Next() {
 		var t models.Task
-
 		err := rows.Scan(
 			&t.ID,
 			&t.Title,
@@ -97,12 +106,12 @@ func (r *TaskRepository) GetTasksByProject(
 		if err != nil {
 			return nil, err
 		}
-
 		tasks = append(tasks, t)
 	}
 
 	return tasks, nil
 }
+
 func (r *TaskRepository) GetTaskByID(ctx context.Context, id uuid.UUID) (*models.Task, error) {
 	query := `
 		SELECT id, title, description, status, priority, project_id, assignee_id, due_date, created_at, updated_at

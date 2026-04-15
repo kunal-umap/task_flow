@@ -128,6 +128,8 @@ func (h *TaskHandler) GetTasks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	limit, offset := utils.GetPagination(r)
+
 	var status *models.TaskStatus
 	if s := r.URL.Query().Get("status"); s != "" {
 		st := models.TaskStatus(s)
@@ -136,20 +138,20 @@ func (h *TaskHandler) GetTasks(w http.ResponseWriter, r *http.Request) {
 
 	var assigneeID *uuid.UUID
 	if a := r.URL.Query().Get("assignee"); a != "" {
-		id, err := uuid.Parse(a)
-		if err == nil {
-			assigneeID = &id
-		}
+		id, _ := uuid.Parse(a)
+		assigneeID = &id
 	}
 
-	tasks, err := h.service.GetTasks(r.Context(), projectID, status, assigneeID)
+	tasks, err := h.service.GetTasks(r.Context(), projectID, status, assigneeID, limit, offset)
 	if err != nil {
 		utils.Error(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	utils.JSON(w, http.StatusOK, map[string]interface{}{
-		"tasks": tasks,
+		"tasks":  tasks,
+		"limit":  limit,
+		"offset": offset,
 	})
 }
 

@@ -37,8 +37,13 @@ func (s *ProjectService) CreateProject(ctx context.Context, name, description st
 	return s.projectRepo.CreateProject(ctx, project)
 }
 
-func (s *ProjectService) GetProjects(ctx context.Context, userID uuid.UUID) ([]models.Project, error) {
-	return s.projectRepo.GetProjectsByUser(ctx, userID)
+func (s *ProjectService) GetProjects(
+	ctx context.Context,
+	userID uuid.UUID,
+	limit int,
+	offset int,
+) ([]models.Project, error) {
+	return s.projectRepo.GetProjectsByUser(ctx, userID, limit, offset)
 }
 
 func (s *ProjectService) GetProjectByID(ctx context.Context, id uuid.UUID) (*models.Project, error) {

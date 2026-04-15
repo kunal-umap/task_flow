@@ -1,8 +1,7 @@
 # TaskFlow — Backend (Go + PostgreSQL)
 
-A minimal but production-style task management backend built with Go, PostgreSQL, and Docker.
-
-This service supports user authentication, project management, and task tracking with proper authorization, clean architecture, and containerized deployment.
+A production-style task management backend built using Go, PostgreSQL, and Docker.
+It supports authentication, project management, and task tracking with clean architecture and secure APIs.
 
 ---
 
@@ -10,60 +9,62 @@ This service supports user authentication, project management, and task tracking
 
 * **Language:** Go (Golang)
 * **Database:** PostgreSQL
-* **Auth:** JWT + bcrypt
 * **Routing:** chi
-* **Database Driver:** pgx
+* **Auth:** JWT + bcrypt
+* **DB Driver:** pgx
 * **Migrations:** golang-migrate
 * **Containerization:** Docker + Docker Compose
+* **Logging:** slog
 
 ---
 
-# 🧠 Architecture Overview
+# 🧠 Architecture
 
 This project follows a **clean layered architecture**:
 
-```
+```text
 Handler → Service → Repository → Database
 ```
 
 ### Layers
 
-* **Handler (HTTP Layer)**
-  Handles request/response, validation, and status codes
+* **Handler**
 
-* **Service (Business Logic)**
-  Contains core logic, validation, and authorization
+  * HTTP handling, validation, responses
+* **Service**
 
-* **Repository (Data Access)**
-  Handles SQL queries using pgx
+  * Business logic, authorization
+* **Repository**
 
+  * SQL queries using pgx
 * **Models**
-  Shared structs representing database entities
+
+  * Structs mapped to DB schema
 
 ---
 
-# 🗂️ Project Structure
+# 📁 Project Structure
 
-```
+```text
 backend/
-├── cmd/server          # Entry point
+├── cmd/server
 ├── internal/
-│   ├── config         # Env config
-│   ├── db             # DB connection
-│   ├── models         # Data models
-│   ├── repository     # DB queries
-│   ├── service        # Business logic
-│   ├── handler        # HTTP handlers
-│   ├── middleware     # JWT auth middleware
-│   └── utils          # bcrypt + JWT
-├── migrations         # SQL migrations
-├── seed               # Seed script (Go)
+│   ├── config
+│   ├── db
+│   ├── models
+│   ├── repository
+│   ├── service
+│   ├── handler
+│   ├── middleware
+│   └── utils
+├── migrations
+├── seed
 ├── Dockerfile
 ```
 
 ---
 
-# ⚙️ Running Locally
+# ⚙️ Setup & Run
 
 ### 1. Clone repo
 
@@ -74,7 +75,7 @@ cd taskflow
 
 ---
 
-### 2. Setup environment
+### 2. Setup env
 
 ```bash
 cp .env.example .env
@@ -90,9 +91,9 @@ docker compose up --build
 
 ---
 
-### 4. API available at
+### 4. Server
 
-```
+```text
 http://localhost:8080
 ```
 
@@ -100,18 +101,19 @@ http://localhost:8080
 
 # 🔁 Migrations
 
-* Migrations are automatically executed on startup using `golang-migrate`
+* Automatically run on startup
+* Uses `golang-migrate`
 * No manual step required
 
 ---
 
 # 🌱 Seed Data
 
-Seed runs automatically on startup.
+Seed runs automatically after migrations.
 
 ### Test credentials:
 
-```
+```text
 Email:    test@example.com
 Password: password123
 ```
@@ -120,17 +122,20 @@ Password: password123
 
 # 🔐 Authentication
 
-* JWT-based authentication
+* JWT-based auth
 * Token expiry: 24 hours
-* Protected routes require:
 
-```
+### Header:
+
+```http
 Authorization: Bearer <token>
 ```
 
 ---
 
 # 📡 API Endpoints
+
+---
 
 ## Auth
 
@@ -143,130 +148,146 @@ Authorization: Bearer <token>
 
 ## Projects
 
-| Method | Endpoint                |
-| ------ | ----------------------- |
-| GET    | `/projects`             |
-| POST   | `/projects`             |
-| GET    | `/projects/{projectID}` |
-| PATCH  | `/projects/{projectID}` |
-| DELETE | `/projects/{projectID}` |
+| Method | Endpoint                 |
+| ------ | ------------------------ |
+| GET    | `/projects?page=&limit=` |
+| POST   | `/projects`              |
+| GET    | `/projects/{projectID}`  |
+| PATCH  | `/projects/{projectID}`  |
+| DELETE | `/projects/{projectID}`  |
 
 ---
 
 ## Tasks
 
-| Method | Endpoint                      |
-| ------ | ----------------------------- |
-| GET    | `/projects/{projectID}/tasks` |
-| POST   | `/projects/{projectID}/tasks` |
-| GET    | `/tasks/{taskID}`             |
-| PATCH  | `/tasks/{taskID}`             |
-| DELETE | `/tasks/{taskID}`             |
+| Method | Endpoint                                                     |
+| ------ | ------------------------------------------------------------ |
+| GET    | `/projects/{projectID}/tasks?page=&limit=&status=&assignee=` |
+| POST   | `/projects/{projectID}/tasks`                                |
+| GET    | `/tasks/{taskID}`                                            |
+| PATCH  | `/tasks/{taskID}`                                            |
+| DELETE | `/tasks/{taskID}`                                            |
 
 ---
 
-## Filters
+# 🔍 Pagination
 
+```http
+GET /projects?page=1&limit=10
+GET /projects/{id}/tasks?page=2&limit=5
 ```
-GET /projects/{projectID}/tasks?status=todo
-GET /projects/{projectID}/tasks?assignee=<uuid>
-```
+
+Defaults:
+
+* page = 1
+* limit = 10 (max 100)
 
 ---
 
 # ⚠️ Error Handling
 
-Standardized responses:
+All responses are JSON:
 
 ```json
 {
-  "error": "validation failed"
+  "error": "message"
 }
 ```
 
-| Code | Meaning      |
-| ---- | ------------ |
-| 400  | Bad request  |
-| 401  | Unauthorized |
-| 403  | Forbidden    |
-| 404  | Not found    |
+### Status Codes
+
+| Code | Meaning        |
+| ---- | -------------- |
+| 400  | Bad request    |
+| 401  | Unauthorized   |
+| 403  | Forbidden      |
+| 404  | Not found      |
+| 500  | Internal error |
 
 ---
 
-# 🐳 Docker Setup
+# 🐳 Docker
 
-* Multi-stage Dockerfile for backend
-* PostgreSQL runs in container
-* Everything starts with one command:
+### Run full system:
 
 ```bash
-docker compose up
+docker compose up --build
 ```
+
+Includes:
+
+* PostgreSQL container
+* Backend container
+* Automatic migrations
+* Automatic seed
 
 ---
 
 # 🧠 Key Design Decisions
 
-### 1. Layered Architecture
+### 1. Clean Architecture
 
-Separates concerns for maintainability and testability
+Improves maintainability and testability
 
-### 2. UUID Usage
+### 2. UUID for IDs
 
-Used UUIDs for all primary keys for scalability and distributed safety
+Better for distributed systems and security
 
-### 3. pgx instead of ORM
+### 3. pgx (No ORM)
 
-Avoided ORM to maintain control over queries and performance
+Full control over SQL and performance
 
 ### 4. Go-based Seeding
 
-Used Go seed script instead of raw SQL for:
+Used instead of SQL to support:
 
 * bcrypt hashing
-* UUID control
-* flexibility
+* UUID generation
 
 ### 5. chi Router
 
-Lightweight and idiomatic routing with middleware support
+Lightweight and idiomatic Go routing
+
+### 6. Static Binary Build
+
+Ensures compatibility with Alpine Docker
 
 ---
 
 # ⚖️ Tradeoffs
 
-* Used query params initially before switching to chi (incremental approach)
-* No pagination implemented to keep scope focused
-* Minimal validation (could be expanded using validator library)
+* No pagination metadata (total count) to keep queries simple
+* Minimal validation (can be extended)
+* No caching layer
 
 ---
 
-# 🚧 What I Would Improve With More Time
+# 🚧 Future Improvements
 
-* Add pagination (`?page=&limit=`)
+* Add total count in pagination
 * Add unit + integration tests
-* Implement structured logging (slog)
 * Add request validation library
-* Improve error response consistency
-* Add role-based access (RBAC)
 * Add Swagger/OpenAPI docs
-* Implement CI/CD pipeline
+* Implement RBAC
+* Add CI/CD pipeline
 
 ---
 
-# ✅ Features Completed
+# ✅ Features
 
 ✔ Authentication (JWT + bcrypt)
-✔ Project CRUD with authorization
+✔ Project CRUD (owner-based auth)
 ✔ Task CRUD with filters
-✔ PostgreSQL with migrations
-✔ Dockerized environment
+✔ Pagination support
+✔ PostgreSQL + migrations
+✔ Dockerized setup
 ✔ Seed data
+✔ Structured logging
 ✔ Clean architecture
 
 ---
 
-# 🙌 Final Notes
+# 🙌 Notes
 
 This project focuses on:
 
@@ -274,6 +295,6 @@ This project focuses on:
 * clarity
 * maintainability
 
-rather than over-engineering.
+rather than unnecessary complexity.
 
 ---
