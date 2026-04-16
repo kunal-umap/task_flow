@@ -16,6 +16,8 @@ import (
 	"taskflow/seed"
 	"time"
 
+	"github.com/go-chi/cors"
+
 	"github.com/go-chi/chi/v5"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
 
@@ -49,6 +51,12 @@ func main() {
 	taskHandler := handler.NewTaskHandler(taskService)
 
 	r := chi.NewRouter()
+	r.Use(cors.Handler(cors.Options{
+		AllowedOrigins:   []string{"http://localhost:5173"},
+		AllowedMethods:   []string{"GET", "POST", "PATCH", "DELETE"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
+		AllowCredentials: true,
+	}))
 
 	r.Use(chimiddleware.Logger)
 	r.Use(chimiddleware.Recoverer)
@@ -84,34 +92,34 @@ func main() {
 	})
 
 	//  Router setup
-	mux := http.NewServeMux()
+	// mux := http.NewServeMux()
 
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Task flow Api is running"))
-	})
+	// mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	// 	w.Write([]byte("Task flow Api is running"))
+	// })
 
-	mux.HandleFunc("/auth/register", authHandler.Register)
-	mux.HandleFunc("/auth/login", authHandler.Login)
+	// mux.HandleFunc("/auth/register", authHandler.Register)
+	// mux.HandleFunc("/auth/login", authHandler.Login)
 
-	// For testing protected route
-	mux.Handle("/protected", middleware.AuthMiddleware(cfg.JWTSecret)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Protected route accessed"))
-	})))
-	// Configuration of server
-	mux.Handle("/projects", authMiddleware(http.HandlerFunc(projectHandler.GetProjects)))
-	mux.Handle("/projects/create", authMiddleware(http.HandlerFunc(projectHandler.CreateProject)))
-	mux.Handle("/projects/get", authMiddleware(http.HandlerFunc(projectHandler.GetProjectByID)))
-	mux.Handle("/projects/update", authMiddleware(http.HandlerFunc(projectHandler.UpdateProject)))
-	mux.Handle("/projects/delete", authMiddleware(http.HandlerFunc(projectHandler.DeleteProject)))
-	mux.Handle("/tasks/get", authMiddleware(http.HandlerFunc(taskHandler.GetTaskByID)))
-	mux.Handle("/tasks/create", authMiddleware(http.HandlerFunc(taskHandler.CreateTask)))
-	mux.Handle("/tasks/list", authMiddleware(http.HandlerFunc(taskHandler.GetTasks)))
-	mux.Handle("/tasks/update", authMiddleware(http.HandlerFunc(taskHandler.UpdateTask)))
-	mux.Handle("/tasks/delete", authMiddleware(http.HandlerFunc(taskHandler.DeleteTask)))
+	// // For testing protected route
+	// mux.Handle("/protected", middleware.AuthMiddleware(cfg.JWTSecret)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	// 	w.Write([]byte("Protected route accessed"))
+	// })))
+	// // Configuration of server
+	// mux.Handle("/projects", authMiddleware(http.HandlerFunc(projectHandler.GetProjects)))
+	// mux.Handle("/projects/create", authMiddleware(http.HandlerFunc(projectHandler.CreateProject)))
+	// mux.Handle("/projects/get", authMiddleware(http.HandlerFunc(projectHandler.GetProjectByID)))
+	// mux.Handle("/projects/update", authMiddleware(http.HandlerFunc(projectHandler.UpdateProject)))
+	// mux.Handle("/projects/delete", authMiddleware(http.HandlerFunc(projectHandler.DeleteProject)))
+	// mux.Handle("/tasks/get", authMiddleware(http.HandlerFunc(taskHandler.GetTaskByID)))
+	// mux.Handle("/tasks/create", authMiddleware(http.HandlerFunc(taskHandler.CreateTask)))
+	// mux.Handle("/tasks/list", authMiddleware(http.HandlerFunc(taskHandler.GetTasks)))
+	// mux.Handle("/tasks/update", authMiddleware(http.HandlerFunc(taskHandler.UpdateTask)))
+	// mux.Handle("/tasks/delete", authMiddleware(http.HandlerFunc(taskHandler.DeleteTask)))
 
 	server := &http.Server{
 		Addr:         ":" + cfg.Port,
-		Handler:      mux,
+		Handler:      r,
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  120 * time.Second,

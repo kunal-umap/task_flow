@@ -3,7 +3,6 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
-	"taskflow/internal/middleware"
 	"taskflow/internal/models"
 	service "taskflow/internal/services"
 	"taskflow/internal/utils"
@@ -167,7 +166,7 @@ func (h *TaskHandler) UpdateTask(w http.ResponseWriter, r *http.Request) {
 	var req UpdateTaskRequest
 	json.NewDecoder(r.Body).Decode(&req)
 
-	claims := r.Context().Value(middleware.UserContextKey).(*utils.JWTClaims)
+	claims := r.Context().Value(utils.UserContextKey).(*utils.JWTClaims)
 	userID, _ := uuid.Parse(claims.UserID)
 
 	var assigneeUUID *uuid.UUID
@@ -216,7 +215,7 @@ func (h *TaskHandler) DeleteTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	claims := r.Context().Value(middleware.UserContextKey).(*utils.JWTClaims)
+	claims := r.Context().Value(utils.UserContextKey).(*utils.JWTClaims)
 	userID, _ := uuid.Parse(claims.UserID)
 
 	err = h.service.DeleteTask(r.Context(), taskID, userID)

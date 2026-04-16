@@ -3,14 +3,24 @@ package utils
 import (
 	"net/http"
 
-	"taskflow/internal/types"
-
 	"github.com/google/uuid"
 )
 
-// IMPORTANT: exported (capital G)
+// 🔥 shared context key
+type contextKey string
+
+const UserContextKey = contextKey("user")
+
+// JWTClaims must already exist in utils/jwt.go
+
 func GetUserID(r *http.Request) (uuid.UUID, bool) {
-	claims, ok := r.Context().Value(types.UserContextKey).(*JWTClaims)
+
+	val := r.Context().Value(UserContextKey)
+	if val == nil {
+		return uuid.Nil, false
+	}
+
+	claims, ok := val.(*JWTClaims)
 	if !ok {
 		return uuid.Nil, false
 	}

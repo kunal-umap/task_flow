@@ -3,7 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
-	"taskflow/internal/middleware"
+	"taskflow/internal/models"
 	service "taskflow/internal/services"
 	"taskflow/internal/utils"
 
@@ -70,6 +70,9 @@ func (h *ProjectHandler) GetProjects(w http.ResponseWriter, r *http.Request) {
 		utils.Error(w, http.StatusInternalServerError, "failed to fetch projects")
 		return
 	}
+	if projects == nil {
+		projects = []models.Project{}
+	}
 
 	utils.JSON(w, http.StatusOK, map[string]interface{}{
 		"projects": projects,
@@ -108,7 +111,7 @@ func (h *ProjectHandler) UpdateProject(w http.ResponseWriter, r *http.Request) {
 	var req CreateProjectRequest
 	json.NewDecoder(r.Body).Decode(&req)
 
-	claims := r.Context().Value(middleware.UserContextKey).(*utils.JWTClaims)
+	claims := r.Context().Value(utils.UserContextKey).(*utils.JWTClaims)
 	userID, _ := uuid.Parse(claims.UserID)
 
 	err = h.service.UpdateProject(r.Context(), id, req.Name, req.Description, userID)
@@ -133,7 +136,7 @@ func (h *ProjectHandler) DeleteProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	claims := r.Context().Value(middleware.UserContextKey).(*utils.JWTClaims)
+	claims := r.Context().Value(utils.UserContextKey).(*utils.JWTClaims)
 	userID, _ := uuid.Parse(claims.UserID)
 
 	err = h.service.DeleteProject(r.Context(), id, userID)
